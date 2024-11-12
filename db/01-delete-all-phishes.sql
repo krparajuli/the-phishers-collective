@@ -1,0 +1,1 @@
+DELETE FROM phishes WHERE 1=1;
