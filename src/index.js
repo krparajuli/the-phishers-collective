@@ -38,7 +38,7 @@ const formHTML = `
     </style>
 </head>
 <body>
-    <h2>The Agents Collective</h2>
+    <h2>The Phishers Collective</h2>
     Phishing is a real threat. Let us worry about it and investigate the link and sources by submitting the phishing message you received.
     Read more here at <a href="https://kalsec.notion.site/The-Phishers-Collective-13c4fb26a3f3800ab408ca2a2c012c85">The Phishes Collective - KalSec</a>
 
@@ -47,17 +47,17 @@ const formHTML = `
     <form method="POST">
 
      <div class="form-group">
-            <label for="phishing_text">Phishing Text *</label>
+            <label for="phishing_text">Phishing Text [Required]</label>
             <textarea id="phishing_text" name="phishing_text" required></textarea>
         </div>
 
         <div class="form-group">
-            <label for="extracted_url">Extracted URL</label>
+            <label for="extracted_url">Extracted URL [Optional]</label>
             <input type="text" id="extracted_url" name="extracted_url" value="Unextracted">
         </div>
 
         <div class="form-group">
-            <label for="received_via">Received Via *</label>
+            <label for="received_via">Received Via</label>
             <select id="received_via" name="received_via" required>
                 <option value="">Select channel</option>
                 <option value="email">Email</option>
@@ -78,8 +78,8 @@ const formHTML = `
         </div>
 
         <div class="form-group">
-            <label for="device_brand">Device Brand</label>
-            <input type="text" id="device_brand" name="device_brand" value="Unspecified">
+            <label for="device_brand">Device Brand [Optional]</label>
+            <input type="text" id="device_brand" name="device_brand" placeholder="Unspecified">
         </div>
 
         <button type="submit">Submit</button>
@@ -137,7 +137,7 @@ function generateTableHTML(data) {
     `;
   });
 
-tableHTML += `</table>`;
+  tableHTML += `</table>`;
   return tableHTML;
 }
 
@@ -176,32 +176,34 @@ async function handleGet(request, env) {
 function defangUrl(text) {
   if (!text) return text;
   const urlRegex = /(https?:\/\/[^\s]+)/gi;
-  return text.replace(urlRegex, '{$1}');
+  return text.replace(urlRegex, "{$1}");
 }
 
 async function handlePost(req, env) {
   const formData = await req.formData();
   const headers = Object.fromEntries(req.headers);
 
- // Extract phishing form data
-const phishingText = defangUrl(formData.get("phishing_text"));
-const extractedUrl = defangUrl(formData.get("extracted_url")) || "Unextracted";
-const receivedVia = formData.get("received_via");
-const device = formData.get("device") || "Unspecified";
-const deviceBrand = formData.get("device_brand") || "Unspecified";
+  // Extract phishing form data
+  const phishingText = defangUrl(formData.get("phishing_text"));
+  const extractedUrl =
+    defangUrl(formData.get("extracted_url")) || "Unextracted";
+  const receivedVia = formData.get("received_via");
+  const device = formData.get("device") || "Unspecified";
+  const deviceBrand = formData.get("device_brand") || "Unspecified";
 
-// System collected data
-const userAgent = headers["user-agent"] || "N/A";
-const allHttpHeaders = JSON.stringify(headers) || "N/A";
-const cfRequestHeaders = JSON.stringify(req.headers) || "N/A";
-const ip = JSON.stringify(req.headers.get("cf-connecting-ip")) || "Unknown";
-const createdAt = new Date().toISOString();
+  // System collected data
+  const userAgent = headers["user-agent"] || "N/A";
+  const allHttpHeaders = JSON.stringify(headers) || "N/A";
+  const cfRequestHeaders = JSON.stringify(req.headers) || "N/A";
+  const ip = JSON.stringify(req.headers.get("cf-connecting-ip")) || "Unknown";
+  const createdAt = new Date().toISOString();
 
   // Get current timestamp
   const timestamp = new Date().toISOString();
 
   // Insert data into database
-  await env.DB.prepare(`
+  await env.DB.prepare(
+    `
       INSERT INTO phishes (
           phishing_text,
           extracted_url,
@@ -214,7 +216,9 @@ const createdAt = new Date().toISOString();
           ip,
           created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
+  `,
+  )
+    .bind(
       phishingText,
       extractedUrl,
       receivedVia,
@@ -224,8 +228,9 @@ const createdAt = new Date().toISOString();
       allHttpHeaders,
       cfRequestHeaders,
       ip,
-      createdAt
-  ).run();
+      createdAt,
+    )
+    .run();
 
   // Redirect back to GET to show the updated list
   return Response.redirect(req.url, 302);
