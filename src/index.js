@@ -53,7 +53,7 @@ const formHTML = `
 
         <div class="form-group">
             <label for="extracted_url">Extracted URL [Optional]</label>
-            <input type="text" id="extracted_url" name="extracted_url" value="Unextracted">
+            <input type="text" id="extracted_url" name="extracted_url" placeholder="Be careful while clicking or copying">
         </div>
 
         <div class="form-group">
